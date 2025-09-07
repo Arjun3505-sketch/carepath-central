@@ -41,7 +41,7 @@ const DoctorDashboard = () => {
           <p className="text-muted-foreground">Welcome back, Dr. Smith</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate("/profile")}>
+          <Button variant="outline" onClick={() => navigate("/doctor-profile")}>
             Profile
           </Button>
           <Button variant="outline" onClick={handleLogout}>
