@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import DoctorDashboard from "./pages/DoctorDashboard";
@@ -20,28 +19,26 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-            <Route path="/doctor-profile" element={<DoctorProfile />} />
-            <Route path="/patient-dashboard" element={<PatientDashboard />} />
-            <Route path="/patient-profile" element={<PatientProfile />} />
-            <Route path="/find-patient" element={<FindPatient />} />
-            <Route path="/add-diagnosis" element={<AddDiagnosis />} />
-            <Route path="/add-prescription" element={<AddPrescription />} />
-            <Route path="/add-lab-report" element={<AddLabReport />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+          <Route path="/doctor-profile" element={<DoctorProfile />} />
+          <Route path="/patient-dashboard" element={<PatientDashboard />} />
+          <Route path="/patient-profile" element={<PatientProfile />} />
+          <Route path="/find-patient" element={<FindPatient />} />
+          <Route path="/add-diagnosis" element={<AddDiagnosis />} />
+          <Route path="/add-prescription" element={<AddPrescription />} />
+          <Route path="/add-lab-report" element={<AddLabReport />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
