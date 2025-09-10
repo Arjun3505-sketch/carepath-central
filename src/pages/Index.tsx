@@ -53,14 +53,24 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* CTA Button */}
-        <Button 
-          size="lg" 
-          className="text-lg px-8 py-6"
-          onClick={() => navigate("/login")}
-        >
-          Access EHR System
-        </Button>
+        {/* CTA Buttons */}
+        <div className="flex gap-4">
+          <Button 
+            size="lg" 
+            className="text-lg px-8 py-6"
+            onClick={() => navigate("/login")}
+          >
+            Login
+          </Button>
+          <Button 
+            variant="outline"
+            size="lg" 
+            className="text-lg px-8 py-6"
+            onClick={() => navigate("/login")}
+          >
+            Sign Up
+          </Button>
+        </div>
       </div>
     </div>
   );
