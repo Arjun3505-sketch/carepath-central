@@ -1,34 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, Users, Calendar, FileText, Plus, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [recentPatients, setRecentPatients] = useState([]);
+  const [recentDiagnoses, setRecentDiagnoses] = useState([]);
+  const [recentPrescriptions, setRecentPrescriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual data from Supabase
-  const recentPatients = [
-    { id: 1, name: "John Doe", lastVisit: "2024-01-05", condition: "Hypertension" },
-    { id: 2, name: "Jane Smith", lastVisit: "2024-01-04", condition: "Diabetes" },
-    { id: 3, name: "Mike Johnson", lastVisit: "2024-01-03", condition: "Asthma" },
-  ];
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const upcomingAppointments = [
-    { id: 1, patient: "Alice Brown", time: "10:00 AM", date: "Today" },
-    { id: 2, patient: "Bob Wilson", time: "2:30 PM", date: "Today" },
-    { id: 3, patient: "Carol Davis", time: "9:00 AM", date: "Tomorrow" },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch recent patients
+      const { data: patientsData } = await supabase
+        .from('patients')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-  const pendingTasks = [
-    { id: 1, type: "Lab Report", patient: "John Doe", urgent: true },
-    { id: 2, type: "Prescription", patient: "Jane Smith", urgent: false },
-    { id: 3, type: "Follow-up", patient: "Mike Johnson", urgent: false },
-  ];
+      // Fetch recent diagnoses 
+      const { data: diagnosesData } = await supabase
+        .from('diagnoses')
+        .select('*, patients(name)')
+        .order('date', { ascending: false })
+        .limit(5);
+
+      // Fetch recent prescriptions
+      const { data: prescriptionsData } = await supabase
+        .from('prescriptions')
+        .select('*, patients(name)')
+        .order('issue_date', { ascending: false })
+        .limit(5);
+
+      setRecentPatients(patientsData || []);
+      setRecentDiagnoses(diagnosesData || []);
+      setRecentPrescriptions(prescriptionsData || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch dashboard data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   const handleLogout = () => {
-    // TODO: Implement actual logout with Supabase
     navigate("/");
   };
 
@@ -90,69 +128,89 @@ const DoctorDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Recent Patients
+              Recent Patients ({recentPatients.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {recentPatients.map((patient) => (
-                <div key={patient.id} className="flex justify-between items-center p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{patient.name}</p>
-                    <p className="text-sm text-muted-foreground">{patient.condition}</p>
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">Loading...</div>
+            ) : recentPatients.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">No patients found</div>
+            ) : (
+              <div className="space-y-3">
+                {recentPatients.map((patient) => (
+                  <div key={patient.id} className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{patient.name}</p>
+                      <p className="text-sm text-muted-foreground">{patient.blood_group}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{formatDate(patient.created_at)}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{patient.lastVisit}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Upcoming Appointments */}
+        {/* Recent Diagnoses */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Upcoming Appointments
+              <Stethoscope className="w-5 h-5" />
+              Recent Diagnoses ({recentDiagnoses.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {upcomingAppointments.map((appointment) => (
-                <div key={appointment.id} className="flex justify-between items-center p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{appointment.patient}</p>
-                    <p className="text-sm text-muted-foreground">{appointment.time}</p>
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">Loading...</div>
+            ) : recentDiagnoses.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">No diagnoses found</div>
+            ) : (
+              <div className="space-y-3">
+                {recentDiagnoses.map((diagnosis) => (
+                  <div key={diagnosis.id} className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{diagnosis.condition}</p>
+                      <p className="text-sm text-muted-foreground">{diagnosis.patients?.name}</p>
+                    </div>
+                    <Badge variant={diagnosis.severity === 'severe' ? 'destructive' : 'secondary'}>
+                      {diagnosis.severity || 'Normal'}
+                    </Badge>
                   </div>
-                  <Badge variant="outline">{appointment.date}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Pending Tasks */}
+        {/* Recent Prescriptions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Pending Tasks
+              Recent Prescriptions ({recentPrescriptions.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {pendingTasks.map((task) => (
-                <div key={task.id} className="flex justify-between items-center p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{task.type}</p>
-                    <p className="text-sm text-muted-foreground">{task.patient}</p>
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">Loading...</div>
+            ) : recentPrescriptions.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">No prescriptions found</div>
+            ) : (
+              <div className="space-y-3">
+                {recentPrescriptions.map((prescription) => (
+                  <div key={prescription.id} className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{prescription.patients?.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {prescription.instructions ? prescription.instructions.substring(0, 30) + '...' : 'No instructions'}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{formatDate(prescription.issue_date)}</p>
                   </div>
-                  <Badge variant={task.urgent ? "destructive" : "secondary"}>
-                    {task.urgent ? "Urgent" : "Normal"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
