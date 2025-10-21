@@ -14,83 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      auth_credentials: {
-        Row: {
-          created_at: string | null
-          hashed_password: string
-          is_active: boolean | null
-          last_login: string | null
-          reset_expiry: string | null
-          reset_token: string | null
-          role: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          hashed_password: string
-          is_active?: boolean | null
-          last_login?: string | null
-          reset_expiry?: string | null
-          reset_token?: string | null
-          role: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          hashed_password?: string
-          is_active?: boolean | null
-          last_login?: string | null
-          reset_expiry?: string | null
-          reset_token?: string | null
-          role?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_doctor"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "doctors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_patient"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      auth_credentials123: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          role: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auth_credentials123_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "doctors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       diagnoses: {
         Row: {
           clinical_notes: string | null
@@ -157,6 +80,7 @@ export type Database = {
           name: string
           phone: string | null
           specialization: string | null
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -169,6 +93,7 @@ export type Database = {
           name: string
           phone?: string | null
           specialization?: string | null
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -181,6 +106,7 @@ export type Database = {
           name?: string
           phone?: string | null
           specialization?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -247,6 +173,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -259,6 +186,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -271,6 +199,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -357,6 +286,27 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       surgeries: {
         Row: {
           complications: string | null
@@ -410,6 +360,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       vaccinations: {
         Row: {
@@ -473,10 +444,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "doctor" | "patient"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -603,6 +580,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["doctor", "patient"],
+    },
   },
 } as const

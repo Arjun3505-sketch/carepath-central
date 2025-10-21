@@ -6,10 +6,12 @@ import { User, Heart, Pill, Calendar, FileText, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signOut, user } = useAuth();
   
   const [patients, setPatients] = useState([]);
   const [diagnoses, setDiagnoses] = useState([]);
@@ -61,8 +63,9 @@ const PatientDashboard = () => {
   const currentPatient = patients[0] || {};
   const latestDiagnosis = diagnoses[0] || {};
 
-  const handleLogout = () => {
-    navigate("/");
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
   };
 
   return (

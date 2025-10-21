@@ -1,10 +1,21 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Stethoscope, Users, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, userRole } = useAuth();
+
+  useEffect(() => {
+    // Redirect authenticated users to their dashboard
+    if (user && userRole) {
+      const redirectPath = userRole === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard';
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, userRole, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

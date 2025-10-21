@@ -1,31 +1,124 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().email("Invalid email address").max(255, "Email too long"),
+  password: z.string().min(6, "Password must be at least 6 characters").max(100, "Password too long"),
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long").optional()
+});
 
 const Login = () => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("patient");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"patient" | "doctor">("patient");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { signIn, signUp, user, userRole } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Redirect if already logged in
+    if (user && userRole) {
+      const redirectPath = userRole === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard';
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, userRole, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // TODO: Implement actual authentication with Supabase
-    toast({
-      title: "Login attempted",
-      description: `Attempting to login as ${role} with email: ${email}`,
-    });
-    
-    // Simulate role-based redirect
-    if (role === "doctor") {
-      window.location.href = "/doctor-dashboard";
-    } else {
-      window.location.href = "/patient-dashboard";
+    setLoading(true);
+
+    try {
+      // Validate inputs
+      const validation = authSchema.safeParse({
+        email: email.trim(),
+        password,
+        fullName: isLogin ? undefined : fullName.trim()
+      });
+
+      if (!validation.success) {
+        toast({
+          title: "Validation Error",
+          description: validation.error.errors[0].message,
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (isLogin) {
+        const { error } = await signIn(email.trim(), password);
+        
+        if (error) {
+          if (error.message.includes("Invalid login credentials")) {
+            toast({
+              title: "Login Failed",
+              description: "Invalid email or password. Please try again.",
+              variant: "destructive"
+            });
+          } else if (error.message.includes("Email not confirmed")) {
+            toast({
+              title: "Email Not Confirmed",
+              description: "Please check your email and confirm your account before logging in.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Login Failed",
+              description: error.message || "An error occurred during login",
+              variant: "destructive"
+            });
+          }
+        } else {
+          toast({
+            title: "Success",
+            description: "Logged in successfully!"
+          });
+        }
+      } else {
+        const { error } = await signUp(email.trim(), password, fullName.trim(), role);
+        
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({
+              title: "Account Exists",
+              description: "This email is already registered. Please login instead.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Sign Up Failed",
+              description: error.message || "An error occurred during sign up",
+              variant: "destructive"
+            });
+          }
+        } else {
+          toast({
+            title: "Success",
+            description: "Account created! Please check your email to confirm your account.",
+          });
+          setIsLogin(true);
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,55 +126,115 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">EHR System Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">EHR System</CardTitle>
           <CardDescription>
-            Sign in to access your electronic health records
+            {isLogin ? "Sign in to access your electronic health records" : "Create your account to get started"}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-3">
-              <Label>Login as:</Label>
-              <RadioGroup value={role} onValueChange={setRole}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="patient" id="patient" />
-                  <Label htmlFor="patient">Patient</Label>
+        
+        <Tabs value={isLogin ? "login" : "signup"} onValueChange={(v) => setIsLogin(v === "login")} className="px-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login">
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4 px-0">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="doctor" id="doctor" />
-                  <Label htmlFor="doctor">Doctor</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
                 </div>
-              </RadioGroup>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full">
-              Sign In
-            </Button>
-          </CardFooter>
-        </form>
+              </CardContent>
+              <CardFooter className="px-0">
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign In"}
+                </Button>
+              </CardFooter>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="signup">
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4 px-0">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Input
+                    id="signup-name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Create a password (min 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label>I am a:</Label>
+                  <RadioGroup value={role} onValueChange={(v) => setRole(v as "patient" | "doctor")} disabled={loading}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="patient" id="signup-patient" />
+                      <Label htmlFor="signup-patient">Patient</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="doctor" id="signup-doctor" />
+                      <Label htmlFor="signup-doctor">Doctor</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </CardContent>
+              <CardFooter className="px-0">
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Creating account..." : "Sign Up"}
+                </Button>
+              </CardFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );

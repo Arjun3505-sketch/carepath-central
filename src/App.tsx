@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import DoctorDashboard from "./pages/DoctorDashboard";
@@ -19,26 +21,84 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-          <Route path="/doctor-profile" element={<DoctorProfile />} />
-          <Route path="/patient-dashboard" element={<PatientDashboard />} />
-          <Route path="/patient-profile" element={<PatientProfile />} />
-          <Route path="/find-patient" element={<FindPatient />} />
-          <Route path="/add-diagnosis" element={<AddDiagnosis />} />
-          <Route path="/add-prescription" element={<AddPrescription />} />
-          <Route path="/add-lab-report" element={<AddLabReport />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route 
+              path="/doctor-dashboard" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <DoctorDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/doctor-profile" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <DoctorProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/patient-dashboard" 
+              element={
+                <ProtectedRoute allowedRole="patient">
+                  <PatientDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/patient-profile" 
+              element={
+                <ProtectedRoute allowedRole="patient">
+                  <PatientProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/find-patient" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <FindPatient />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/add-diagnosis" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <AddDiagnosis />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/add-prescription" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <AddPrescription />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/add-lab-report" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <AddLabReport />
+                </ProtectedRoute>
+              } 
+            />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
