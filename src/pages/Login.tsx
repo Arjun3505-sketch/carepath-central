@@ -32,32 +32,49 @@ const Login = () => {
     // Redirect if already logged in and check if profile setup is needed
     const checkAndRedirect = async () => {
       if (user && userRole) {
-        if (userRole === 'doctor') {
-          // Check if doctor profile exists and is complete
-          const { data } = await supabase
-            .from('doctors')
-            .select('specialization, license_number')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          if (!data || !data.specialization || !data.license_number) {
-            navigate('/doctor-profile-setup', { replace: true });
-          } else {
+        try {
+          if (userRole === 'doctor') {
+            // Check if doctor profile exists and is complete
+            const { data, error } = await supabase
+              .from('doctors')
+              .select('specialization, license_number')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            if (error) {
+              console.error('Error checking doctor profile:', error);
+              return;
+            }
+            
+            // Redirect to setup if no record exists or fields are incomplete
+            if (!data || !data.specialization || !data.license_number) {
+              navigate('/doctor-profile-setup', { replace: true });
+              return;
+            }
+            
             navigate('/doctor-dashboard', { replace: true });
-          }
-        } else {
-          // Check if patient profile exists
-          const { data } = await supabase
-            .from('patients')
-            .select('id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          if (!data) {
-            navigate('/patient-profile-setup', { replace: true });
-          } else {
+          } else if (userRole === 'patient') {
+            // Check if patient profile exists
+            const { data, error } = await supabase
+              .from('patients')
+              .select('id')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            if (error) {
+              console.error('Error checking patient profile:', error);
+              return;
+            }
+            
+            if (!data) {
+              navigate('/patient-profile-setup', { replace: true });
+              return;
+            }
+            
             navigate('/patient-dashboard', { replace: true });
           }
+        } catch (error) {
+          console.error('Error in redirect logic:', error);
         }
       }
     };
