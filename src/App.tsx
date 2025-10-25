@@ -15,6 +15,8 @@ import FindPatient from "./pages/FindPatient";
 import AddDiagnosis from "./pages/AddDiagnosis";
 import AddPrescription from "./pages/AddPrescription";
 import AddLabReport from "./pages/AddLabReport";
+import PatientProfileSetup from "./pages/PatientProfileSetup";
+import DoctorProfileSetup from "./pages/DoctorProfileSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,22 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route 
+              path="/patient-profile-setup" 
+              element={
+                <ProtectedRoute allowedRole="patient">
+                  <PatientProfileSetup />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/doctor-profile-setup" 
+              element={
+                <ProtectedRoute allowedRole="doctor">
+                  <DoctorProfileSetup />
+                </ProtectedRoute>
+              } 
+            />
             <Route 
               path="/doctor-dashboard" 
               element={

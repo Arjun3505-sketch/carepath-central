@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   userRole: 'doctor' | 'patient' | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: 'doctor' | 'patient') => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -66,8 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'doctor' | 'patient') => {
-    const redirectUrl = `${window.location.origin}/`;
+  const signUp = async (email: string, password: string, fullName: string) => {
+    const redirectUrl = `${window.location.origin}/patient-profile-setup`;
     
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -82,11 +82,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) return { error };
 
-    // Create user role
+    // Create user role - always patient for signup
     if (data.user) {
       const { error: roleError } = await supabase
         .from('user_roles')
-        .insert({ user_id: data.user.id, role });
+        .insert({ user_id: data.user.id, role: 'patient' });
       
       if (roleError) return { error: roleError };
     }

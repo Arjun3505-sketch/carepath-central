@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const authSchema = z.object({
@@ -21,18 +22,47 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"patient" | "doctor">("patient");
+  
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { signIn, signUp, user, userRole } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect if already logged in
-    if (user && userRole) {
-      const redirectPath = userRole === 'doctor' ? '/doctor-dashboard' : '/patient-dashboard';
-      navigate(redirectPath, { replace: true });
-    }
+    // Redirect if already logged in and check if profile setup is needed
+    const checkAndRedirect = async () => {
+      if (user && userRole) {
+        if (userRole === 'doctor') {
+          // Check if doctor profile exists and is complete
+          const { data } = await supabase
+            .from('doctors')
+            .select('specialization, license_number')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (!data || !data.specialization || !data.license_number) {
+            navigate('/doctor-profile-setup', { replace: true });
+          } else {
+            navigate('/doctor-dashboard', { replace: true });
+          }
+        } else {
+          // Check if patient profile exists
+          const { data } = await supabase
+            .from('patients')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (!data) {
+            navigate('/patient-profile-setup', { replace: true });
+          } else {
+            navigate('/patient-dashboard', { replace: true });
+          }
+        }
+      }
+    };
+    
+    checkAndRedirect();
   }, [user, userRole, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,7 +117,7 @@ const Login = () => {
           });
         }
       } else {
-        const { error } = await signUp(email.trim(), password, fullName.trim(), role);
+        const { error } = await signUp(email.trim(), password, fullName.trim());
         
         if (error) {
           if (error.message.includes("already registered")) {
@@ -212,19 +242,6 @@ const Login = () => {
                     required
                     disabled={loading}
                   />
-                </div>
-                <div className="space-y-3">
-                  <Label>I am a:</Label>
-                  <RadioGroup value={role} onValueChange={(v) => setRole(v as "patient" | "doctor")} disabled={loading}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="patient" id="signup-patient" />
-                      <Label htmlFor="signup-patient">Patient</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="doctor" id="signup-doctor" />
-                      <Label htmlFor="signup-doctor">Doctor</Label>
-                    </div>
-                  </RadioGroup>
                 </div>
               </CardContent>
               <CardFooter className="px-0">
