@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,23 +10,76 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, User, Settings, Shield, Bell, FileText, Eye, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const PatientProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
 
-  // Mock patient data - replace with Supabase data
   const [personalInfo, setPersonalInfo] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@email.com",
-    phone: "+1234567890",
-    dateOfBirth: "1989-05-15",
-    address: "123 Main St, City, State 12345",
-    emergencyContact: "Jane Doe - +0987654321",
-    bloodGroup: "A+",
-    allergies: "Peanuts, Shellfish"
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    address: "",
+    emergencyContact: "",
+    bloodGroup: "",
+    allergies: ""
   });
+
+  useEffect(() => {
+    if (user) {
+      fetchPatientData();
+    }
+  }, [user]);
+
+  const fetchPatientData = async () => {
+    try {
+      if (!user) return;
+
+      const { data: patient, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching patient:', error);
+        throw error;
+      }
+
+      if (patient) {
+        const nameParts = patient.name?.split(' ') || ['', ''];
+        const emergencyContact = patient.emergency_contact as { name?: string; phone?: string } | null;
+        setPersonalInfo({
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(' ') || "",
+          email: patient.email || "",
+          phone: patient.phone || "",
+          dateOfBirth: patient.dob || "",
+          address: patient.address || "",
+          emergencyContact: emergencyContact?.name && emergencyContact?.phone 
+            ? `${emergencyContact.name} - ${emergencyContact.phone}` 
+            : "",
+          bloodGroup: patient.blood_group || "",
+          allergies: "" // Not in DB schema
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching patient data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load patient profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [notifications, setNotifications] = useState({
     appointmentReminders: true,

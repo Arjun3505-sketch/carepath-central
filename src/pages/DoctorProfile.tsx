@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,23 +22,72 @@ import {
   Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const DoctorProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
 
-  // Mock doctor data - replace with actual data from Supabase
   const [doctorInfo, setDoctorInfo] = useState({
-    name: "Dr. Smith",
-    email: "dr.smith@hospital.com",
-    phone: "+1 (555) 123-4567",
-    specialization: "Cardiology",
-    licenseNumber: "MD12345",
-    experience: "15 years",
-    hospital: "City General Hospital",
-    department: "Cardiology Department",
-    bio: "Experienced cardiologist with expertise in interventional procedures."
+    name: "",
+    email: "",
+    phone: "",
+    specialization: "",
+    licenseNumber: "",
+    experience: "",
+    hospital: "",
+    department: "",
+    bio: ""
   });
+
+  useEffect(() => {
+    if (user) {
+      fetchDoctorData();
+    }
+  }, [user]);
+
+  const fetchDoctorData = async () => {
+    try {
+      if (!user) return;
+
+      const { data: doctor, error } = await supabase
+        .from('doctors')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching doctor:', error);
+        throw error;
+      }
+
+      if (doctor) {
+        setDoctorInfo({
+          name: doctor.name || "",
+          email: doctor.email || "",
+          phone: doctor.phone || "",
+          specialization: doctor.specialization || "",
+          licenseNumber: doctor.license_number || "",
+          experience: "", // Not in DB schema
+          hospital: "", // Not in DB schema
+          department: "", // Not in DB schema
+          bio: "" // Not in DB schema
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching doctor data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load doctor profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [notifications, setNotifications] = useState({
     emailAlerts: true,
