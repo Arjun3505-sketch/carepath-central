@@ -17,31 +17,63 @@ const DoctorDashboard = () => {
   const [recentDiagnoses, setRecentDiagnoses] = useState([]);
   const [recentPrescriptions, setRecentPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [doctorData, setDoctorData] = useState<any>(null);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch recent patients
+      if (!user) return;
+
+      // First, fetch the current doctor record for this user
+      const { data: doctor, error: doctorError } = await supabase
+        .from('doctors')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (doctorError) {
+        console.error('Error fetching doctor:', doctorError);
+        throw doctorError;
+      }
+
+      if (!doctor) {
+        console.error('No doctor record found for user');
+        toast({
+          title: "Error",
+          description: "Doctor profile not found. Please complete your profile setup.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      setDoctorData(doctor);
+
+      // Fetch recent patients (all patients for now, could be filtered by doctor's patients)
       const { data: patientsData } = await supabase
         .from('patients')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(5);
 
-      // Fetch recent diagnoses 
+      // Fetch recent diagnoses by this doctor
       const { data: diagnosesData } = await supabase
         .from('diagnoses')
         .select('*, patients(name)')
+        .eq('doctor_id', doctor.id)
         .order('date', { ascending: false })
         .limit(5);
 
-      // Fetch recent prescriptions
+      // Fetch recent prescriptions by this doctor
       const { data: prescriptionsData } = await supabase
         .from('prescriptions')
         .select('*, patients(name)')
+        .eq('doctor_id', doctor.id)
         .order('issue_date', { ascending: false })
         .limit(5);
 
@@ -79,7 +111,9 @@ const DoctorDashboard = () => {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Doctor Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, Dr. Smith</p>
+          <p className="text-muted-foreground">
+            Welcome back, {doctorData ? `Dr. ${doctorData.name}` : 'Doctor'}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate("/doctor-profile")}>
