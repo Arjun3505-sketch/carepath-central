@@ -21,21 +21,42 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPatientData();
-  }, []);
+    if (user) {
+      fetchPatientData();
+    }
+  }, [user]);
 
   const fetchPatientData = async () => {
     try {
-      // Fetch all patient data
-      const [patientsRes, diagnosesRes, prescriptionsRes, labReportsRes, vaccinationsRes] = await Promise.all([
-        supabase.from('patients').select('*').limit(1),
-        supabase.from('diagnoses').select('*').order('date', { ascending: false }).limit(5),
-        supabase.from('prescriptions').select('*').order('issue_date', { ascending: false }).limit(5),
-        supabase.from('lab_reports').select('*').order('date', { ascending: false }).limit(5),
-        supabase.from('vaccinations').select('*').order('administered_date', { ascending: false }).limit(5)
+      if (!user) return;
+
+      // First, fetch the current patient record for this user
+      const { data: patientData, error: patientError } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (patientError) {
+        console.error('Error fetching patient:', patientError);
+        throw patientError;
+      }
+
+      if (!patientData) {
+        console.error('No patient record found for user');
+        setLoading(false);
+        return;
+      }
+
+      // Then fetch all related data for this specific patient
+      const [diagnosesRes, prescriptionsRes, labReportsRes, vaccinationsRes] = await Promise.all([
+        supabase.from('diagnoses').select('*').eq('patient_id', patientData.id).order('date', { ascending: false }).limit(5),
+        supabase.from('prescriptions').select('*').eq('patient_id', patientData.id).order('issue_date', { ascending: false }).limit(5),
+        supabase.from('lab_reports').select('*').eq('patient_id', patientData.id).order('date', { ascending: false }).limit(5),
+        supabase.from('vaccinations').select('*').eq('patient_id', patientData.id).order('administered_date', { ascending: false }).limit(5)
       ]);
 
-      setPatients(patientsRes.data || []);
+      setPatients([patientData]);
       setDiagnoses(diagnosesRes.data || []);
       setPrescriptions(prescriptionsRes.data || []);
       setLabReports(labReportsRes.data || []);
