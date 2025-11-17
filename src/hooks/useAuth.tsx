@@ -82,21 +82,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (error) return { error };
 
-    // Check if this is a new user or existing user
-    // identities will be empty for existing users with repeated signup
-    if (data.user && data.user.identities && data.user.identities.length > 0) {
-      // Create user role - always patient for signup
+    // Create user role - always patient for signup
+    if (data.user) {
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({ user_id: data.user.id, role: 'patient' });
       
-      if (roleError) {
-        console.error('Role creation error:', roleError);
-        return { error: roleError };
-      }
-    } else if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-      // User already exists
-      return { error: { message: 'An account with this email already exists. Please sign in instead.' } };
+      if (roleError) return { error: roleError };
     }
 
     return { error: null };

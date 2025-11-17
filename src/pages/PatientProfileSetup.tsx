@@ -13,7 +13,6 @@ import { z } from "zod";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
-  email: z.string().email("Invalid email address").max(255, "Email too long"),
   dob: z.string().min(1, "Date of birth is required"),
   gender: z.string().min(1, "Gender is required"),
   address: z.string().max(500, "Address too long").optional(),
@@ -26,7 +25,6 @@ const profileSchema = z.object({
 const PatientProfileSetup = () => {
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
     dob: "",
     gender: "",
     address: "",
@@ -85,7 +83,6 @@ const PatientProfileSetup = () => {
         .insert({
           user_id: user.id,
           name: formData.name,
-          email: formData.email,
           dob: formData.dob,
           gender: formData.gender || null,
           address: formData.address || null,
@@ -131,18 +128,6 @@ const PatientProfileSetup = () => {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 disabled={loading}
               />

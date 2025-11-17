@@ -21,7 +21,6 @@ export type Database = {
           created_at: string | null
           date: string
           doctor_id: string
-          file_url: string | null
           icd10_code: string | null
           id: string
           patient_id: string
@@ -34,7 +33,6 @@ export type Database = {
           created_at?: string | null
           date: string
           doctor_id: string
-          file_url?: string | null
           icd10_code?: string | null
           id?: string
           patient_id: string
@@ -47,7 +45,6 @@ export type Database = {
           created_at?: string | null
           date?: string
           doctor_id?: string
-          file_url?: string | null
           icd10_code?: string | null
           id?: string
           patient_id?: string
@@ -119,7 +116,6 @@ export type Database = {
           date: string
           doctor_id: string
           file_path: string | null
-          file_url: string | null
           id: string
           patient_id: string
           remarks: string | null
@@ -131,7 +127,6 @@ export type Database = {
           date: string
           doctor_id: string
           file_path?: string | null
-          file_url?: string | null
           id?: string
           patient_id: string
           remarks?: string | null
@@ -143,7 +138,6 @@ export type Database = {
           date?: string
           doctor_id?: string
           file_path?: string | null
-          file_url?: string | null
           id?: string
           patient_id?: string
           remarks?: string | null
@@ -318,7 +312,6 @@ export type Database = {
           complications: string | null
           created_at: string | null
           date: string
-          file_url: string | null
           icd_pcs_code: string | null
           id: string
           outcome: string | null
@@ -331,7 +324,6 @@ export type Database = {
           complications?: string | null
           created_at?: string | null
           date: string
-          file_url?: string | null
           icd_pcs_code?: string | null
           id?: string
           outcome?: string | null
@@ -344,7 +336,6 @@ export type Database = {
           complications?: string | null
           created_at?: string | null
           date?: string
-          file_url?: string | null
           icd_pcs_code?: string | null
           id?: string
           outcome?: string | null
